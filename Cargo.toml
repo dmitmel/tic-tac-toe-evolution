@@ -1,0 +1,11 @@
+[package]
+edition = "2018"
+publish = false
+name = "tic-tac-toe-evolution"
+version = "0.1.0"
+authors = ["Dmytro Meleshko <dmytro.meleshko@gmail.com>"]
+description = "An AI for Tic-tac-toe using an evolutionary algorithm"
+license = "MIT"
+repository = "https://github.com/dmitmel/tic-tac-toe-evolution.git"
+homepage = "https://github.com/dmitmel/tic-tac-toe-evolution#readme"
+readme = "README.md"
