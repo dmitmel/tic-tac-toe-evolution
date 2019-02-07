@@ -1,4 +1,11 @@
 pub type Coord = usize;
+pub type Cell = Option<PlayerMark>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlayerMark {
+  X,
+  O,
+}
 
 #[derive(Debug)]
 pub struct Board {
@@ -7,32 +14,19 @@ pub struct Board {
   cells: Vec<Cell>,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum Cell {
-  Empty,
-  Player1,
-  Player2,
-}
-
 impl Board {
   pub fn new(width: Coord, height: Coord) -> Self {
-    Self { width, height, cells: vec![Cell::Empty; width * height] }
+    Self { width, height, cells: vec![None; width * height] }
   }
 
   fn assert_in_bounds(&self, x: Coord, y: Coord) {
-    macro_rules! is_in_bounds {
-      ($val:expr, $val_name:expr, $max:expr, $max_name:expr) => {
-        if $val >= $max {
-          panic!(
-            "{} out of bounds: the {} is {} but the {} is {}",
-            $val_name, $max_name, $max, $val_name, $val,
-          );
-        }
-      };
+    let Self { width, height, .. } = self;
+    if x >= self.width {
+      panic!("x out of bounds: the width is {} but the x is {}", width, x);
     }
-
-    is_in_bounds!(x, "x", self.width, "width");
-    is_in_bounds!(y, "y", self.height, "height");
+    if y >= self.height {
+      panic!("y out of bounds: the height is {} but the y is {}", height, y);
+    }
   }
 
   pub fn get(&self, x: Coord, y: Coord) -> Cell {
