@@ -1,3 +1,5 @@
+mod board;
+
 fn main() {
-  println!("Hello, world!");
+  let mut board = board::Board::new(64, 64);
 }
