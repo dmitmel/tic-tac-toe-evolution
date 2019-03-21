@@ -1,3 +1,5 @@
+use std::fmt;
+
 pub type Coord = usize;
 pub type Cell = Option<PlayerMark>;
 
@@ -37,6 +39,26 @@ impl Board {
   pub fn set(&mut self, x: Coord, y: Coord, cell: Cell) {
     self.assert_in_bounds(x, y);
     self.cells[y * self.width + x] = cell;
+  }
+}
+
+impl fmt::Display for Board {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    for y in 0..self.height {
+      for x in 0..self.width {
+        write!(
+          f,
+          "{}",
+          match self.get(x, y) {
+            None => ' ',
+            Some(PlayerMark::X) => 'x',
+            Some(PlayerMark::O) => 'o',
+          }
+        )?;
+      }
+      writeln!(f)?;
+    }
+    Ok(())
   }
 }
 
@@ -92,5 +114,19 @@ mod tests {
     let board = Board::new(width, height);
 
     board.get(0, height);
+  }
+
+  #[test]
+  fn test_display() {
+    let mut board = Board::new(3, 3);
+    board.set(1, 0, Some(PlayerMark::X));
+    board.set(2, 1, Some(PlayerMark::O));
+    board.set(2, 2, Some(PlayerMark::X));
+    board.set(1, 2, Some(PlayerMark::O));
+    board.set(0, 2, Some(PlayerMark::X));
+
+    let string = format!("{}", board);
+
+    assert_eq!(string, " x \n  o\nxox\n");
   }
 }
