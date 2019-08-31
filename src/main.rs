@@ -3,18 +3,9 @@ mod bot;
 
 use gio::prelude::*;
 use gtk::prelude::*;
-use gtk::{Application, ApplicationWindow};
+use gtk::Application;
 
-const APP_NAME: &str = "Tic-tac-toe: Evolution";
 const APP_ID: &str = "com.github.dmitmel.tic-tac-toe-evolution";
-
-const PANGO_SCALE_XX_SMALL: f64 = PANGO_SCALE_X_SMALL / 1.2;
-const PANGO_SCALE_X_SMALL: f64 = PANGO_SCALE_SMALL / 1.2;
-const PANGO_SCALE_SMALL: f64 = PANGO_SCALE_MEDIUM / 1.2;
-const PANGO_SCALE_MEDIUM: f64 = 1.0;
-const PANGO_SCALE_LARGE: f64 = PANGO_SCALE_MEDIUM * 1.2;
-const PANGO_SCALE_X_LARGE: f64 = PANGO_SCALE_LARGE * 1.2;
-const PANGO_SCALE_XX_LARGE: f64 = PANGO_SCALE_X_LARGE * 1.2;
 
 fn main() {
   let application =
@@ -22,31 +13,41 @@ fn main() {
       .expect("failed to initialize GTK application");
 
   application.connect_activate(|app| {
-    let window = ApplicationWindow::new(app);
-    window.set_title(APP_NAME);
-    window.set_default_size(800, 600);
-    window.set_property_window_position(gtk::WindowPosition::Center);
+    let glade_src = include_str!("main.glade");
+    let builder = gtk::Builder::new_from_string(glade_src);
 
     let mut board = board::Board::new(64, 64);
 
-    let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
-
-    let app_name_label = gtk::Label::new(Some(APP_NAME));
-    let app_name_attr_list = pango::AttrList::new();
-
+    let player1: gtk::ComboBoxText = builder.get_object("player1").unwrap();
+    let player2: gtk::ComboBoxText = builder.get_object("player2").unwrap();
+    let play: gtk::Button = builder.get_object("play").unwrap();
+    fn update_play_button_state(
+      player1: &gtk::ComboBoxText,
+      player2: &gtk::ComboBoxText,
+      play: &gtk::Button,
+    ) {
+      play.set_sensitive(
+        player1.get_active_id().is_some() && player2.get_active_id().is_some(),
+      );
+    };
     {
-      use pango::Attribute;
-      let attr = Attribute::new_weight(pango::Weight::Bold).unwrap();
-      app_name_attr_list.insert(attr);
-      let attr = Attribute::new_scale(PANGO_SCALE_XX_LARGE).unwrap();
-      app_name_attr_list.insert(attr);
+      let player2 = player2.clone();
+      let play = play.clone();
+      player1.connect_changed(move |player1| {
+        update_play_button_state(player1, &player2, &play)
+      });
     }
-    app_name_label.set_attributes(Some(&app_name_attr_list));
+    {
+      let player1 = player1.clone();
+      let play = play.clone();
+      player2.connect_changed(move |player2| {
+        update_play_button_state(&player1, player2, &play)
+      });
+    }
+    update_play_button_state(&player1, &player2, &play);
 
-    vbox.pack_start(&app_name_label, false, false, 0);
-
-    window.add(&vbox);
-
+    let window: gtk::ApplicationWindow = builder.get_object("window1").unwrap();
+    window.set_application(Some(app));
     window.show_all();
   });
 

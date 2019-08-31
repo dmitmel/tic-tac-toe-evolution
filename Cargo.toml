@@ -12,8 +12,4 @@ readme = "README.md"
 
 [dependencies]
 gtk = "0.7.0"
-pango = "0.7.0"
-
-[dependencies.gio]
-version = ""
-features = ["v2_44"]
+gio = "0.7.0"
