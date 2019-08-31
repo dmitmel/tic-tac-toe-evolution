@@ -9,3 +9,10 @@ license = "MIT"
 repository = "https://github.com/dmitmel/tic-tac-toe-evolution.git"
 homepage = "https://github.com/dmitmel/tic-tac-toe-evolution#readme"
 readme = "README.md"
+
+[dependencies]
+gtk = { version = "0.7.0", features = ["v3_16"] }
+
+[dependencies.gio]
+version = ""
+features = ["v2_44"]
