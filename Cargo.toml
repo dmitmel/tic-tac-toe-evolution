@@ -11,7 +11,8 @@ homepage = "https://github.com/dmitmel/tic-tac-toe-evolution#readme"
 readme = "README.md"
 
 [dependencies]
-gtk = { version = "0.7.0", features = ["v3_16"] }
+gtk = "0.7.0"
+pango = "0.7.0"
 
 [dependencies.gio]
 version = ""
