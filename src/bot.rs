@@ -41,8 +41,8 @@ impl Bot {
       program,
       instruction_pointer: 0,
       mark,
-      head_x: board.width / 2,
-      head_y: board.height / 2,
+      head_x: board.width() / 2,
+      head_y: board.height() / 2,
     }
   }
 
@@ -76,8 +76,8 @@ impl Bot {
         {
           match instruction {
             $($instruction => {
-              change_coord!(self.head_x, board.width, $x_change);
-              change_coord!(self.head_y, board.height, $y_change);
+              change_coord!(self.head_x, board.width(), $x_change);
+              change_coord!(self.head_y, board.height(), $y_change);
             })*
             _ => unreachable!(),
           }
@@ -289,11 +289,11 @@ mod tests {
       bot.head_x = 0;
       bot.head_y = 0;
 
-      for _ in 0..board.width {
+      for _ in 0..board.width() {
         bot.make_move(&mut board);
       }
 
-      for x in 0..board.width {
+      for x in 0..board.width() {
         assert_eq!(board.get(x, 0).unwrap(), PlayerMark::X);
       }
     }

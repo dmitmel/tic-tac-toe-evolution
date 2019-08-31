@@ -11,14 +11,22 @@ pub enum PlayerMark {
 
 #[derive(Debug)]
 pub struct Board {
-  pub width: Coord,
-  pub height: Coord,
+  width: Coord,
+  height: Coord,
   cells: Vec<Cell>,
 }
 
 impl Board {
   pub fn new(width: Coord, height: Coord) -> Self {
     Self { width, height, cells: vec![None; width * height] }
+  }
+
+  pub fn width(&self) -> Coord {
+    self.width
+  }
+
+  pub fn height(&self) -> Coord {
+    self.height
   }
 
   fn assert_in_bounds(&self, x: Coord, y: Coord) {
