@@ -23,8 +23,9 @@ fn main() {
   application.connect_activate(|app| {
     let builder = gtk::Builder::new_from_string(include_str!("main.glade"));
 
-    let mut board = Board::new(10, 10);
+    let mut board = Board::new(100, 100);
     randomly_fill_board(&mut board);
+    let program1 = generate_random_program();
 
     let ui_board: gtk::DrawingArea = builder.get_object("board").unwrap();
     ui_board.set_size_request(
@@ -45,6 +46,34 @@ fn main() {
       Inhibit(false)
     });
 
+    let ui_program1: gtk::ListBox = builder.get_object("program1").unwrap();
+    for instruction in program1 {
+      use crate::bot::instructions::*;
+      let instruction_name = match instruction {
+        MOVE_UP => "MOVE_UP".to_string(),
+        MOVE_UP_RIGHT => "MOVE_UP_RIGHT".to_string(),
+        MOVE_RIGHT => "MOVE_RIGHT".to_string(),
+        MOVE_DOWN_RIGHT => "MOVE_DOWN_RIGHT".to_string(),
+        MOVE_DOWN => "MOVE_DOWN".to_string(),
+        MOVE_DOWN_LEFT => "MOVE_DOWN_LEFT".to_string(),
+        MOVE_LEFT => "MOVE_LEFT".to_string(),
+        MOVE_UP_LEFT => "MOVE_UP_LEFT".to_string(),
+
+        CHECK_MARK => "CHECK_MARK".to_string(),
+        PLACE_MARK => "PLACE_MARK".to_string(),
+        jump => format!("JUMP({})", jump),
+      };
+
+      let list_box_row = gtk::ListBoxRow::new();
+      let label = gtk::Label::new(Some(&instruction_name));
+      label.set_halign(gtk::Align::Start);
+      let mut font_desc = pango::FontDescription::new();
+      font_desc.set_family("monospace");
+      WidgetExt::override_font(&label, Some(&font_desc));
+      list_box_row.add(&label);
+      ui_program1.add(&list_box_row);
+    }
+
     let window: gtk::ApplicationWindow = builder.get_object("window2").unwrap();
     window.set_application(Some(app));
     window.show_all();
@@ -55,7 +84,8 @@ fn main() {
 }
 
 fn randomly_fill_board(board: &mut Board) {
-  use rand::distributions::{Bernoulli, Distribution};
+  use rand::distributions::Bernoulli;
+  use rand::Rng;
   let mut rng = rand::thread_rng();
   let dstr = Bernoulli::new(0.5).unwrap();
   for y in 0..board.width() {
@@ -63,18 +93,21 @@ fn randomly_fill_board(board: &mut Board) {
       board.set(
         x,
         y,
-        if dstr.sample(&mut rng) {
-          Some(if dstr.sample(&mut rng) {
-            PlayerMark::X
-          } else {
-            PlayerMark::O
-          })
+        if rng.sample(dstr) {
+          Some(if rng.sample(dstr) { PlayerMark::X } else { PlayerMark::O })
         } else {
           None
         },
       )
     }
   }
+}
+
+fn generate_random_program() -> bot::Program {
+  use rand::distributions::Standard;
+  use rand::Rng;
+  let rng = rand::thread_rng();
+  rng.sample_iter(Standard).take(10).collect()
 }
 
 fn render_board(board: &Board, ctx: &cairo::Context) {
