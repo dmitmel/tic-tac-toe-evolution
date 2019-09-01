@@ -46,17 +46,15 @@ fn main() {
       Inhibit(false)
     });
 
-    let ui_program1: gtk::ListBox = builder.get_object("program1").unwrap();
+    let ui_program1: gtk::ListStore =
+      builder.get_object("program1_liststore").unwrap();
     for (address, instruction) in program1.iter().enumerate() {
-      let line = format!("{:04x}: {:?}", address, instruction);
-      let list_box_row = gtk::ListBoxRow::new();
-      let label = gtk::Label::new(Some(&line));
-      label.set_halign(gtk::Align::Start);
-      let mut font_desc = pango::FontDescription::new();
-      font_desc.set_family("monospace");
-      WidgetExt::override_font(&label, Some(&font_desc));
-      list_box_row.add(&label);
-      ui_program1.add(&list_box_row);
+      let icon = if address == 0 { Some("gtk-go-forward") } else { None };
+      ui_program1.insert_with_values(
+        None,
+        &[0, 1, 2],
+        &[&icon, &format!("{:04x}", address), &format!("{:?}", instruction)],
+      );
     }
 
     let window: gtk::ApplicationWindow = builder.get_object("window2").unwrap();
@@ -94,7 +92,7 @@ fn generate_random_program() -> bot::Program {
   let mut rng = rand::thread_rng();
   rng
     .sample_iter(Uniform::new(0, 10))
-    .take(128)
+    .take(0x100)
     .map(|n: u8| {
       use crate::bot::Instruction::*;
       use crate::bot::MoveDirection::*;
