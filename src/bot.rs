@@ -2,29 +2,27 @@ use crate::board::*;
 
 pub const INSTRUCTIONS_PER_MOVE: usize = 25;
 
-pub type Instruction = u8;
-pub type Program = Vec<Instruction>;
-
-pub mod instructions {
-  pub use super::Instruction;
-
-  pub const MOVE_UP: Instruction = 0;
-  pub const MOVE_UP_RIGHT: Instruction = 1;
-  pub const MOVE_RIGHT: Instruction = 2;
-  pub const MOVE_DOWN_RIGHT: Instruction = 3;
-  pub const MOVE_DOWN: Instruction = 4;
-  pub const MOVE_DOWN_LEFT: Instruction = 5;
-  pub const MOVE_LEFT: Instruction = 6;
-  pub const MOVE_UP_LEFT: Instruction = 7;
-
-  pub const CHECK_MARK: Instruction = 8;
-  pub const PLACE_MARK: Instruction = 9;
-
-  #[allow(non_snake_case)]
-  pub fn JUMP(instructions: u8) -> Instruction {
-    PLACE_MARK + instructions
-  }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MoveDirection {
+  Up,
+  UpRight,
+  Right,
+  DownRight,
+  Down,
+  DownLeft,
+  Left,
+  UpLeft,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Instruction {
+  Move(MoveDirection),
+  CheckMark,
+  PlaceMark,
+  Jump(u8),
+}
+
+pub type Program = Vec<Instruction>;
 
 #[derive(Debug)]
 pub struct Bot {
@@ -50,7 +48,7 @@ impl Bot {
     for _executed_instructions in 0..INSTRUCTIONS_PER_MOVE {
       let instruction = self.program[self.instruction_pointer];
       self.execute_instruction(instruction, board);
-      if instruction == instructions::PLACE_MARK {
+      if instruction == Instruction::PlaceMark {
         break;
       }
     }
@@ -71,11 +69,11 @@ impl Bot {
       };
     }
 
-    macro_rules! movement_instructions {
-      ($($instruction:ident => ($x_change:tt, $y_change:tt),)*) => {
+    macro_rules! movement_instruction {
+      ($direction_expr:expr; $($direction:ident => ($x_change:tt, $y_change:tt),)*) => {
         {
-          match instruction {
-            $($instruction => {
+          match $direction_expr {
+            $($direction => {
               change_coord!(self.head_x, board.width(), $x_change);
               change_coord!(self.head_y, board.height(), $y_change);
             })*
@@ -85,20 +83,22 @@ impl Bot {
       };
     }
 
-    use instructions::*;
+    use self::Instruction::*;
+    use self::MoveDirection::*;
     match instruction {
-      MOVE_UP..=MOVE_UP_LEFT => movement_instructions! {
-        MOVE_UP         => (0, -),
-        MOVE_UP_RIGHT   => (+, -),
-        MOVE_RIGHT      => (+, 0),
-        MOVE_DOWN_RIGHT => (+, +),
-        MOVE_DOWN       => (0, +),
-        MOVE_DOWN_LEFT  => (-, +),
-        MOVE_LEFT       => (-, 0),
-        MOVE_UP_LEFT    => (-, -),
+      Move(direction) => movement_instruction! {
+        direction;
+        Up        => (0, -),
+        UpRight   => (+, -),
+        Right     => (+, 0),
+        DownRight => (+, +),
+        Down      => (0, +),
+        DownLeft  => (-, +),
+        Left      => (-, 0),
+        UpLeft    => (-, -),
       },
 
-      CHECK_MARK => {
+      CheckMark => {
         self.skip_instructions(match board.get(self.head_x, self.head_y) {
           None => 1,
           Some(mark) if mark == self.mark => 2,
@@ -107,12 +107,12 @@ impl Bot {
         return;
       }
 
-      PLACE_MARK => {
+      PlaceMark => {
         board.set(self.head_x, self.head_y, Some(self.mark));
       }
 
-      jump => {
-        self.skip_instructions((jump - PLACE_MARK) as usize);
+      Jump(jump) => {
+        self.skip_instructions(jump as usize);
         return;
       }
     }
@@ -128,12 +128,13 @@ impl Bot {
 
 #[cfg(test)]
 mod tests {
-  use super::instructions::*;
+  use super::Instruction::*;
+  use super::MoveDirection::*;
   use super::*;
 
   #[test]
   fn test_constructor() {
-    let program = vec![1, 2, 3, 4, 5];
+    let program = vec![Move(Up), Move(Right), Move(Down), Move(Left)];
     let mark = PlayerMark::X;
     let board = Board::new(1, 1);
 
@@ -162,24 +163,24 @@ mod tests {
 
     #[test]
     fn test_movement() {
-      let (program, instructions_count) = {
+      let (program, moves_count) = {
         let program = vec![
-          MOVE_UP,
-          MOVE_UP_RIGHT,
-          MOVE_RIGHT,
-          MOVE_DOWN_RIGHT,
-          MOVE_DOWN,
-          MOVE_DOWN_LEFT,
-          MOVE_LEFT,
-          MOVE_UP_LEFT,
+          Move(Up),
+          Move(UpRight),
+          Move(Right),
+          Move(DownRight),
+          Move(Down),
+          Move(DownLeft),
+          Move(Left),
+          Move(UpLeft),
         ];
-        let instructions_count = program.len();
+        let moves_count = program.len();
         (
           program
             .iter()
-            .flat_map(|instruction| vec![*instruction, PLACE_MARK])
+            .flat_map(|instruction| vec![*instruction, PlaceMark])
             .collect(),
-          instructions_count,
+          moves_count,
         )
       };
       let mut board = Board::new(10, 10);
@@ -190,7 +191,7 @@ mod tests {
       let mut prev_head_x = first_head_x;
       let mut prev_head_y = first_head_y;
 
-      for _ in 0..instructions_count {
+      for _ in 0..moves_count {
         bot.make_move(&mut board);
         assert!(bot.head_x != prev_head_x || bot.head_y != prev_head_y);
         prev_head_x = bot.head_x;
@@ -206,11 +207,11 @@ mod tests {
       let board_size = 5;
       let program = {
         let mut program: Program = vec![];
-        for instruction in &[MOVE_UP, MOVE_RIGHT, MOVE_DOWN, MOVE_LEFT] {
+        for instruction in &[Move(Up), Move(Right), Move(Down), Move(Left)] {
           for _ in 0..board_size {
             program.push(*instruction);
           }
-          program.push(PLACE_MARK);
+          program.push(PlaceMark);
         }
         program
       };
@@ -230,7 +231,7 @@ mod tests {
     #[test]
     fn test_instruction_limit_per_move() {
       let program: Program =
-        iter::repeat(MOVE_DOWN).take(INSTRUCTIONS_PER_MOVE + 1).collect();
+        iter::repeat(Move(Down)).take(INSTRUCTIONS_PER_MOVE + 1).collect();
       let mut board =
         Board::new(INSTRUCTIONS_PER_MOVE * 2, INSTRUCTIONS_PER_MOVE * 2);
       let mut bot = Bot::new(program, PlayerMark::O, &board);
@@ -244,9 +245,8 @@ mod tests {
 
     #[test]
     fn test_place_mark() {
-      let program: Program = vec![
-        PLACE_MARK, MOVE_RIGHT, PLACE_MARK, MOVE_RIGHT, MOVE_RIGHT, PLACE_MARK,
-      ];
+      let program: Program =
+        vec![PlaceMark, Move(Right), PlaceMark, Move(Right), Move(Right), PlaceMark];
       let mut board = Board::new(10, 10);
       let mut bot = Bot::new(program, PlayerMark::X, &board);
 
@@ -259,8 +259,7 @@ mod tests {
 
     #[test]
     fn test_unconditional_jump() {
-      let program =
-        vec![MOVE_DOWN, JUMP(2), MOVE_RIGHT, MOVE_RIGHT, PLACE_MARK];
+      let program = vec![Move(Down), Jump(2), Move(Right), Move(Right), PlaceMark];
       let mut board = Board::new(3, 3);
       let mut bot = Bot::new(program, PlayerMark::O, &board);
       bot.head_x = 0;
@@ -274,13 +273,13 @@ mod tests {
     #[test]
     fn test_tape_loop() {
       let program = vec![
-        CHECK_MARK,
-        JUMP(5),
-        JUMP(2),
-        JUMP(3),
-        MOVE_RIGHT,
-        JUMP(2),
-        PLACE_MARK,
+        CheckMark,
+        Jump(5),
+        Jump(2),
+        Jump(3),
+        Move(Right),
+        Jump(2),
+        PlaceMark,
       ];
       let mut board = Board::new(5, 1);
       board.set(4, 0, Some(PlayerMark::O));
@@ -302,7 +301,7 @@ mod tests {
     fn test_check_mark() {
       fn run_test(intial_mark: Option<PlayerMark>, expected_x: Coord) {
         let program =
-          vec![CHECK_MARK, MOVE_RIGHT, MOVE_RIGHT, MOVE_RIGHT, PLACE_MARK];
+          vec![CheckMark, Move(Right), Move(Right), Move(Right), PlaceMark];
         let mut board = Board::new(4, 1);
         let mut bot = Bot::new(program, PlayerMark::X, &board);
         bot.head_x = 0;

@@ -47,25 +47,10 @@ fn main() {
     });
 
     let ui_program1: gtk::ListBox = builder.get_object("program1").unwrap();
-    for instruction in program1 {
-      use crate::bot::instructions::*;
-      let instruction_name = match instruction {
-        MOVE_UP => "MOVE_UP".to_string(),
-        MOVE_UP_RIGHT => "MOVE_UP_RIGHT".to_string(),
-        MOVE_RIGHT => "MOVE_RIGHT".to_string(),
-        MOVE_DOWN_RIGHT => "MOVE_DOWN_RIGHT".to_string(),
-        MOVE_DOWN => "MOVE_DOWN".to_string(),
-        MOVE_DOWN_LEFT => "MOVE_DOWN_LEFT".to_string(),
-        MOVE_LEFT => "MOVE_LEFT".to_string(),
-        MOVE_UP_LEFT => "MOVE_UP_LEFT".to_string(),
-
-        CHECK_MARK => "CHECK_MARK".to_string(),
-        PLACE_MARK => "PLACE_MARK".to_string(),
-        jump => format!("JUMP({})", jump),
-      };
-
+    for (address, instruction) in program1.iter().enumerate() {
+      let line = format!("{:04x}: {:?}", address, instruction);
       let list_box_row = gtk::ListBoxRow::new();
-      let label = gtk::Label::new(Some(&instruction_name));
+      let label = gtk::Label::new(Some(&line));
       label.set_halign(gtk::Align::Start);
       let mut font_desc = pango::FontDescription::new();
       font_desc.set_family("monospace");
@@ -104,10 +89,37 @@ fn randomly_fill_board(board: &mut Board) {
 }
 
 fn generate_random_program() -> bot::Program {
-  use rand::distributions::Standard;
+  use rand::distributions::{Standard, Uniform};
   use rand::Rng;
-  let rng = rand::thread_rng();
-  rng.sample_iter(Standard).take(10).collect()
+  let mut rng = rand::thread_rng();
+  rng
+    .sample_iter(Uniform::new(0, 10))
+    .take(128)
+    .map(|n: u8| {
+      use crate::bot::Instruction::*;
+      use crate::bot::MoveDirection::*;
+      match n {
+        0..=7 => Move(match n {
+          0 => Up,
+          1 => UpRight,
+          2 => Right,
+          3 => DownRight,
+          4 => Down,
+          5 => DownLeft,
+          6 => Left,
+          7 => UpLeft,
+          _ => unreachable!(),
+        }),
+
+        8 => CheckMark,
+        9 => PlaceMark,
+
+        10 => Jump(rng.sample(Standard)),
+
+        _ => unreachable!(),
+      }
+    })
+    .collect()
 }
 
 fn render_board(board: &Board, ctx: &cairo::Context) {
