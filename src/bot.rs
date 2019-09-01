@@ -44,6 +44,12 @@ impl Bot {
     }
   }
 
+  pub fn program(&self) -> &Program { &self.program }
+  pub fn instruction_pointer(&self) -> usize { self.instruction_pointer }
+  pub fn mark(&self) -> PlayerMark { self.mark }
+  pub fn head_x(&self) -> Coord { self.head_x }
+  pub fn head_y(&self) -> Coord { self.head_y }
+
   pub fn make_move(&mut self, board: &mut Board) {
     for _executed_instructions in 0..INSTRUCTIONS_PER_MOVE {
       let instruction = self.program[self.instruction_pointer];

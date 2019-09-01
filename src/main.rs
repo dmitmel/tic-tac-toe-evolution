@@ -8,6 +8,7 @@ use gtk::prelude::*;
 use gtk::Application;
 
 use crate::board::{Board, PlayerMark};
+use crate::bot::Bot;
 
 const APP_ID: &str = "com.github.dmitmel.tic-tac-toe-evolution";
 
@@ -25,7 +26,8 @@ fn main() {
 
     let mut board = Board::new(100, 100);
     randomly_fill_board(&mut board);
-    let program1 = generate_random_program();
+    let player1 = Bot::new(generate_random_program(), PlayerMark::X, &board);
+    let player2 = Bot::new(generate_random_program(), PlayerMark::O, &board);
 
     let ui_board: gtk::DrawingArea = builder.get_object("board").unwrap();
     ui_board.set_size_request(
@@ -46,19 +48,41 @@ fn main() {
       Inhibit(false)
     });
 
-    let ui_program1: gtk::ListStore =
-      builder.get_object("program1_liststore").unwrap();
-    for (address, instruction) in program1.iter().enumerate() {
+    let ui_player1_info: gtk::Label =
+      builder.get_object("player1_info").unwrap();
+    ui_player1_info.set_text(&format!(
+      "Mark: {:?}\nInstruction count: {}\nProgram:",
+      player1.mark(),
+      player1.program().len()
+    ));
+
+    let ui_player1_program_instructions: gtk::ListStore =
+      builder.get_object("player1_program_instructions").unwrap();
+    for (address, instruction) in player1.program().iter().enumerate() {
       let icon = if address == 0 { Some("gtk-go-forward") } else { None };
-      ui_program1.insert_with_values(
+      ui_player1_program_instructions.insert_with_values(
         None,
         &[0, 1, 2],
         &[&icon, &format!("{:04x}", address), &format!("{:?}", instruction)],
       );
     }
 
+    let ui_player1_program: gtk::TreeView =
+      builder.get_object("player1_program").unwrap();
+    let ui_player1_show_current_instruction: gtk::Button =
+      builder.get_object("player1_show_current_instruction").unwrap();
+    ui_player1_show_current_instruction.connect_clicked(move |_| {
+      let instruction_pointer: usize = player1.instruction_pointer();
+      ui_player1_program.set_cursor(
+        &gtk::TreePath::new_from_indicesv(&[instruction_pointer as i32]),
+        None::<&gtk::TreeViewColumn>,
+        false,
+      );
+    });
+
     let window: gtk::ApplicationWindow = builder.get_object("window2").unwrap();
     window.set_application(Some(app));
+    window.maximize();
     window.show_all();
   });
 
