@@ -51,9 +51,10 @@ fn main() {
     let ui_player1_info: gtk::Label =
       builder.get_object("player1_info").unwrap();
     ui_player1_info.set_text(&format!(
-      "Mark: {:?}\nInstruction count: {}\nProgram:",
+      "Mark: {:?}\nInstruction count: {}\nCurrent address: {:04x}\nProgram:",
       player1.mark(),
-      player1.program().len()
+      player1.program().len(),
+      player1.instruction_pointer(),
     ));
 
     let ui_player1_program_instructions: gtk::ListStore =
