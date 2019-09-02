@@ -44,11 +44,21 @@ impl Bot {
     }
   }
 
-  pub fn program(&self) -> &Program { &self.program }
-  pub fn instruction_pointer(&self) -> usize { self.instruction_pointer }
-  pub fn mark(&self) -> PlayerMark { self.mark }
-  pub fn head_x(&self) -> Coord { self.head_x }
-  pub fn head_y(&self) -> Coord { self.head_y }
+  pub fn program(&self) -> &Program {
+    &self.program
+  }
+  pub fn instruction_pointer(&self) -> usize {
+    self.instruction_pointer
+  }
+  pub fn mark(&self) -> PlayerMark {
+    self.mark
+  }
+  pub fn head_x(&self) -> Coord {
+    self.head_x
+  }
+  pub fn head_y(&self) -> Coord {
+    self.head_y
+  }
 
   pub fn make_move(&mut self, board: &mut Board) {
     for _executed_instructions in 0..INSTRUCTIONS_PER_MOVE {
@@ -251,8 +261,14 @@ mod tests {
 
     #[test]
     fn test_place_mark() {
-      let program: Program =
-        vec![PlaceMark, Move(Right), PlaceMark, Move(Right), Move(Right), PlaceMark];
+      let program: Program = vec![
+        PlaceMark,
+        Move(Right),
+        PlaceMark,
+        Move(Right),
+        Move(Right),
+        PlaceMark,
+      ];
       let mut board = Board::new(10, 10);
       let mut bot = Bot::new(program, PlayerMark::X, &board);
 
@@ -265,7 +281,8 @@ mod tests {
 
     #[test]
     fn test_unconditional_jump() {
-      let program = vec![Move(Down), Jump(2), Move(Right), Move(Right), PlaceMark];
+      let program =
+        vec![Move(Down), Jump(2), Move(Right), Move(Right), PlaceMark];
       let mut board = Board::new(3, 3);
       let mut bot = Bot::new(program, PlayerMark::O, &board);
       bot.head_x = 0;

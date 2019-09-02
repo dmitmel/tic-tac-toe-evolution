@@ -2,7 +2,7 @@
 <!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.0"/>
-  <object class="GtkListStore" id="player1_program_instructions">
+  <object class="GtkListStore" id="player_program_instructions">
     <columns>
       <!-- column-name icon -->
       <column type="gchararray"/>
@@ -117,15 +117,9 @@
                 <property name="orientation">vertical</property>
                 <property name="spacing">8</property>
                 <child>
-                  <object class="GtkLabel">
+                  <object class="GtkComboBoxText" id="player">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="halign">start</property>
-                    <property name="label" translatable="yes">Player 1</property>
-                    <attributes>
-                      <attribute name="weight" value="bold"/>
-                      <attribute name="scale" value="1.2"/>
-                    </attributes>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -134,7 +128,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkLabel" id="player1_info">
+                  <object class="GtkLabel" id="player_info">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="halign">start</property>
@@ -155,10 +149,10 @@ Program:</property>
                     <property name="shadow_type">in</property>
                     <property name="min_content_width">201</property>
                     <child>
-                      <object class="GtkTreeView" id="player1_program">
+                      <object class="GtkTreeView" id="player_program">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="model">player1_program_instructions</property>
+                        <property name="model">player_program_instructions</property>
                         <property name="headers_visible">False</property>
                         <property name="enable_search">False</property>
                         <property name="search_column">0</property>
@@ -213,7 +207,7 @@ Program:</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="player1_show_current_instruction">
+                  <object class="GtkButton" id="show_current_instruction">
                     <property name="label" translatable="yes">Show current instruction</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>

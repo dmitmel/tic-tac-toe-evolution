@@ -2,6 +2,7 @@ mod board;
 mod bot;
 
 use std::f64;
+use std::rc::Rc;
 
 use gio::prelude::*;
 use gtk::prelude::*;
@@ -26,8 +27,10 @@ fn main() {
 
     let mut board = Board::new(100, 100);
     randomly_fill_board(&mut board);
-    let player1 = Bot::new(generate_random_program(), PlayerMark::X, &board);
-    let player2 = Bot::new(generate_random_program(), PlayerMark::O, &board);
+    let players = Rc::new([
+      Bot::new(generate_random_program(), PlayerMark::X, &board),
+      Bot::new(generate_random_program(), PlayerMark::O, &board),
+    ]);
 
     let ui_board: gtk::DrawingArea = builder.get_object("board").unwrap();
     ui_board.set_size_request(
@@ -48,38 +51,74 @@ fn main() {
       Inhibit(false)
     });
 
-    let ui_player1_info: gtk::Label =
-      builder.get_object("player1_info").unwrap();
-    ui_player1_info.set_text(&format!(
-      "Mark: {:?}\nInstruction count: {}\nCurrent address: {:04x}\nProgram:",
-      player1.mark(),
-      player1.program().len(),
-      player1.instruction_pointer(),
-    ));
+    let ui_player: gtk::ComboBoxText = builder.get_object("player").unwrap();
+    for index in 0..players.len() {
+      ui_player.append_text(&format!("Player {}", index));
+    }
+    ui_player.set_active(Some(0));
 
-    let ui_player1_program_instructions: gtk::ListStore =
-      builder.get_object("player1_program_instructions").unwrap();
-    for (address, instruction) in player1.program().iter().enumerate() {
-      let icon = if address == 0 { Some("gtk-go-forward") } else { None };
-      ui_player1_program_instructions.insert_with_values(
-        None,
-        &[0, 1, 2],
-        &[&icon, &format!("{:04x}", address), &format!("{:?}", instruction)],
-      );
+    {
+      let players = Rc::clone(&players);
+      let ui_player_info: gtk::Label =
+        builder.get_object("player_info").unwrap();
+      let ui_player_program_instructions: gtk::ListStore =
+        builder.get_object("player_program_instructions").unwrap();
+      let update_player_sidebar = move |ui_player: &gtk::ComboBoxText| {
+        if let Some(selected) = ui_player.get_active() {
+          let selected_player = &players[selected as usize];
+
+          ui_player_info.set_text(&format!(
+            "\
+Mark: {:?}
+Instruction count: {}
+Current address: {:04x}
+Program:",
+            selected_player.mark(),
+            selected_player.program().len(),
+            selected_player.instruction_pointer(),
+          ));
+
+          ui_player_program_instructions.clear();
+          for (address, instruction) in
+            selected_player.program().iter().enumerate()
+          {
+            let icon = if address == 0 { Some("gtk-go-forward") } else { None };
+            ui_player_program_instructions.insert_with_values(
+              None,
+              &[0, 1, 2],
+              &[
+                &icon,
+                &format!("{:04x}", address),
+                &format!("{:?}", instruction),
+              ],
+            );
+          }
+        }
+      };
+      update_player_sidebar(&ui_player);
+      ui_player.connect_changed(update_player_sidebar);
     }
 
-    let ui_player1_program: gtk::TreeView =
-      builder.get_object("player1_program").unwrap();
-    let ui_player1_show_current_instruction: gtk::Button =
-      builder.get_object("player1_show_current_instruction").unwrap();
-    ui_player1_show_current_instruction.connect_clicked(move |_| {
-      let instruction_pointer: usize = player1.instruction_pointer();
-      ui_player1_program.set_cursor(
-        &gtk::TreePath::new_from_indicesv(&[instruction_pointer as i32]),
-        None::<&gtk::TreeViewColumn>,
-        false,
-      );
-    });
+    {
+      let players = Rc::clone(&players);
+      let ui_player_program: gtk::TreeView =
+        builder.get_object("player_program").unwrap();
+      let ui_show_current_instruction: gtk::Button =
+        builder.get_object("show_current_instruction").unwrap();
+      ui_show_current_instruction.connect_clicked(move |_| {
+        if let Some(selected) = ui_player.get_active() {
+          let selected_player = &players[selected as usize];
+
+          let instruction_pointer: usize =
+            selected_player.instruction_pointer();
+          ui_player_program.set_cursor(
+            &gtk::TreePath::new_from_indicesv(&[instruction_pointer as i32]),
+            None::<&gtk::TreeViewColumn>,
+            false,
+          );
+        }
+      });
+    }
 
     let window: gtk::ApplicationWindow = builder.get_object("window2").unwrap();
     window.set_application(Some(app));
