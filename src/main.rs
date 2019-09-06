@@ -61,12 +61,40 @@ fn main() {
       let players = Rc::clone(&players);
       let ui_player_info: gtk::Label =
         builder.get_object("player_info").unwrap();
-      let ui_player_program_instructions: gtk::ListStore =
-        builder.get_object("player_program_instructions").unwrap();
+      let ui_player_program: gtk::TreeView =
+        builder.get_object("player_program").unwrap();
+
+      let mut ui_player_programs_instructions: Vec<gtk::ListStore> = vec![];
+      for player in players.iter() {
+        let ui_instructions = gtk::ListStore::new(&[
+          String::static_type(),
+          String::static_type(),
+          String::static_type(),
+        ]);
+
+        for (address, instruction) in player.program().iter().enumerate() {
+          let icon = if address == player.instruction_pointer() {
+            Some("gtk-go-forward")
+          } else {
+            None
+          };
+          ui_instructions.insert_with_values(
+            None,
+            &[0, 1, 2],
+            &[
+              &icon,
+              &format!("{:04x}", address),
+              &format!("{:?}", instruction),
+            ],
+          );
+        }
+
+        ui_player_programs_instructions.push(ui_instructions);
+      }
+
       let update_player_sidebar = move |ui_player: &gtk::ComboBoxText| {
         if let Some(selected) = ui_player.get_active() {
           let selected_player = &players[selected as usize];
-
           ui_player_info.set_text(&format!(
             "\
 Mark: {:?}
@@ -78,21 +106,9 @@ Program:",
             selected_player.instruction_pointer(),
           ));
 
-          ui_player_program_instructions.clear();
-          for (address, instruction) in
-            selected_player.program().iter().enumerate()
-          {
-            let icon = if address == 0 { Some("gtk-go-forward") } else { None };
-            ui_player_program_instructions.insert_with_values(
-              None,
-              &[0, 1, 2],
-              &[
-                &icon,
-                &format!("{:04x}", address),
-                &format!("{:?}", instruction),
-              ],
-            );
-          }
+          ui_player_program.set_model(Some(
+            &ui_player_programs_instructions[selected as usize],
+          ));
         }
       };
       update_player_sidebar(&ui_player);
